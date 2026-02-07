@@ -33,6 +33,9 @@ The fastest way to get Sakai running is using the provided Docker automation scr
     ```bash
     ./manage_docker.sh build
     ```
+    > [!TIP]
+    > On fresh Ubuntu systems, the script will automatically detect if Docker is missing and install it for you!
+
 3.  **Monitor the logs**:
     ```bash
     ./manage_docker.sh logs
