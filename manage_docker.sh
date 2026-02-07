@@ -8,6 +8,19 @@ GREEN='\033[0;32m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# --- Command Discovery ---
+# Detect if we should use 'docker compose' (V2) or 'docker-compose' (V1)
+if docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker compose"
+elif docker-compose --version >/dev/null 2>&1; then
+    DOCKER_COMPOSE="docker-compose"
+else
+    echo -e "${RED}[ERROR]${NC} Neither 'docker compose' nor 'docker-compose' was found."
+    echo "Please install Docker Compose to continue."
+    exit 1
+fi
+echo -e "${BLUE}[INFO]${NC} Using: $DOCKER_COMPOSE"
+
 function show_help() {
     echo "Usage: ./manage_docker.sh [command]"
     echo ""
@@ -28,31 +41,31 @@ fi
 case "$1" in
     build)
         echo -e "${BLUE}[INFO]${NC} Building and starting Sakai services..."
-        docker-compose up -d --build
+        $DOCKER_COMPOSE up -d --build
         echo -e "${GREEN}[SUCCESS]${NC} Build initiated. Run './manage_docker.sh logs' to monitor startup."
         ;;
     start)
         echo -e "${BLUE}[INFO]${NC} Starting Sakai services..."
-        docker-compose up -d
+        $DOCKER_COMPOSE up -d
         echo -e "${GREEN}[SUCCESS]${NC} Services started."
         ;;
     stop)
         echo -e "${BLUE}[INFO]${NC} Stopping Sakai services..."
-        docker-compose stop
+        $DOCKER_COMPOSE stop
         echo -e "${GREEN}[SUCCESS]${NC} Services stopped."
         ;;
     logs)
-        docker-compose logs -f sakai
+        $DOCKER_COMPOSE logs -f sakai
         ;;
     status)
-        docker-compose ps
+        $DOCKER_COMPOSE ps
         ;;
     clean)
         echo -e "${RED}[WARNING]${NC} This will delete ALL your Sakai data (database & files)!"
         read -p "Are you sure you want to proceed? (y/N) " -n 1 -r
         echo
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            docker-compose down -v
+            $DOCKER_COMPOSE down -v
             echo -e "${GREEN}[SUCCESS]${NC} Cleaned all Docker resources and volumes."
         else
             echo -e "${BLUE}[INFO]${NC} Operation cancelled."
