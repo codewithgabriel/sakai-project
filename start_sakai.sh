@@ -24,8 +24,8 @@ echo -e "${BLUE}[INFO]${NC} Sakai service started. Monitoring logs for completio
 echo -e "${BLUE}[INFO]${NC} This usually takes 5-10 minutes. Press Ctrl+C to stop monitoring (Sakai will continue starting in background)."
 
 # 3. Monitor logs for startup message
-# We use sudo tail and grep to find the magic string
-(sudo tail -f "$LOG_FILE" &) | grep -q "Server startup in"
+# We use sudo tail -n 0 -f to ensure we only see NEW logs
+(sudo tail -n 0 -f "$LOG_FILE" &) | grep -q "Server startup in"
 
 if [ $? -eq 0 ]; then
     echo ""

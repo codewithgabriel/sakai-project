@@ -249,8 +249,8 @@ username@javax.sql.BaseDataSource=${SAKAI_DB_USER}
 password@javax.sql.BaseDataSource=${SAKAI_DB_PASS}
 vendor@org.sakaiproject.db.api.SqlService=mysql
 driverClassName@javax.sql.BaseDataSource=com.mysql.cj.jdbc.Driver
-hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
-url@javax.sql.BaseDataSource=jdbc:mysql://127.0.0.1:3306/${SAKAI_DB_NAME}?useUnicode=true&characterEncoding=UTF-8&useSSL=false
+hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+url@javax.sql.BaseDataSource=jdbc:mysql://127.0.0.1:3306/${SAKAI_DB_NAME}?useUnicode=true&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true
 validationQuery@javax.sql.BaseDataSource=
 defaultTransactionIsolationString@javax.sql.BaseDataSource=TRANSACTION_READ_COMMITTED
 EOF
