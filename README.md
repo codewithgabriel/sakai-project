@@ -1,61 +1,93 @@
-# Sakai LMS Automatic Installer
+# Sakai LMS: Automated Deployment & Management
 
-This project contains a "magic" shell script to automate the installation of **Sakai 23** on Ubuntu 20.04/22.04 LTS systems.
+This project provides a robust, production-ready environment for **Sakai 23**, with automated scripts for both native (Ubuntu/Debian) and containerized (Docker) deployments. It features integrated fixes for common startup issues and a simplified management interface.
 
-## Overview
-The `install_sakai.sh` script handles the entire lifecycle of the installation:
-- **Dependencies**: Java 11 (OpenJDK), Git, Maven 3.9.6, Tomcat 9
-- **Database**: MySQL 8 Server (Creates `sakaidatabase`)
-- **Configuration**: Sets up `JAVA_OPTS`, `server.xml` UTF-8 encoding, and `sakai.properties`
-- **Build**: Downloads Sakai 23.x source, compiles it with Maven, and deploys to Tomcat
-- **Service**: Creates a `sakai` systemd service for automatic startup
+## 🏗️ Architecture
 
-## Usage
+The deployment follows a standard N-tier architecture, enhanced with a dynamic configuration layer to ensure consistency across environments.
 
-**WARNING**: This script is designed for a **FRESH** installation. It installs system packages and modifies configuration files. Do not run this on a server running other critical applications without reviewing the script first.
+```mermaid
+graph TD
+    User((User)) -->|HTTP:8080| Portal[Sakai Portal / Tomcat]
+    subgraph "Sakai Application Layer"
+        Portal -->|Internal Bus| Kernel[Sakai Kernel]
+        Kernel -->|Config Load| Properties[sakai.properties]
+    end
+    subgraph "Data Layer"
+        Kernel -->|JDBC| MySQL[(MySQL 8 Database)]
+    end
+    subgraph "Management Layer"
+        Scripts[Automation Scripts] -.->|Control| Portal
+        Scripts -.->|Inject Config| Properties
+    end
+```
 
-### Shell Script Installation
-1.  **Download/Clone** this repository to your Ubuntu server.
-2.  **Make executable**:
+---
+
+## 🚀 Quick Start (Docker)
+
+The fastest way to get Sakai running is using the provided Docker automation script.
+
+1.  **Clone the repository**.
+2.  **Start the build**:
     ```bash
-    chmod +x install_sakai.sh
+    ./manage_docker.sh build
     ```
-3.  **Run as Root**:
+3.  **Monitor the logs**:
     ```bash
-    sudo ./install_sakai.sh
+    ./manage_docker.sh logs
     ```
+4.  **Access the portal**: once the logs say "Server startup in [X] ms", go to [http://localhost:8080/portal](http://localhost:8080/portal).
 
-### Docker Installation (Recommended)
+---
 
-For a containerized setup using Docker and Docker Compose:
+## 🛠️ Script Documentation
 
-1.  **Prerequisites**: Ensure you have [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
-2.  **Start Services**:
-    ```bash
-    docker-compose up -d
-    ```
-3.  **Monitor Build**:
-    The initial build will take 15-30+ minutes as it clones and compiles Sakai from source.
-    ```bash
-    docker-compose logs -f sakai
-    ```
-4.  **Access Sakai**:
-    Once the logs show that Tomcat has started, access Sakai at: `http://localhost:8080/portal`
+The project includes several helper scripts to automate the lifecycle of the application.
 
-**Docker Configuration**:
-- **Database**: The MySQL 8.0 container is pre-configured with the necessary schema and user.
-- **Persistence**: Database data and Sakai configuration are stored in Docker volumes (`db_data`, `sakai_data`).
-- **Custom Properties**: Edit `sakai.properties.docker` before building if you need custom settings.
+| Script | Purpose | Environment |
+| :--- | :--- | :--- |
+| `manage_docker.sh` | **Recommended**. Unified tool for build, start, stop, and cleanup of containers. | Docker |
+| `install_sakai.sh` | Performs a full native installation (Java 11, Tomcat 9, Maven, MySQL). | Native (Ubuntu) |
+| `start_sakai.sh` | Starts the native Sakai service and monitors logs until it's ready. | Native |
+| `stop_sakai.sh` | Safely shuts down the native Sakai service. | Native |
 
-## Post-Installation
-Once the script finishes (it can take 15-30+ minutes depending on internet and CPU speed for the Maven build):
+### Detailed Command Reference (`manage_docker.sh`)
 
-1.  Access Sakai at: `http://localhost:8080/portal`
-2.  **Database Credentials** (Default):
-    - User: `sakaiuser`
-    - Password: `sakaipassword`
-    - **SECURITY NOTE**: Change these in `install_sakai.sh` and your database if using in production.
+- `build`: Builds the Docker image from source and starts services.
+- `start / stop`: Manage existing containers without rebuilding.
+- `status`: Shows the health and uptime of the app and database.
+- `clean`: Removes all containers and **deletes all volumes** (Use with caution!).
 
-## Troubleshooting
-- **Logs**: Check Tomcat logs at `/opt/tomcat/logs/catalina.out`
-- **Service Status**: Check service with `systemctl status sakai`
+---
+
+## 🔧 Configuration
+
+All deployment methods use a template-based configuration system. You can customize the following variables in `docker-compose.yml` or the script headers:
+
+| Variable | Default | Description |
+| :--- | :--- | :--- |
+| `SAKAI_DB_USER` | `sakaiuser` | Database ownership user. |
+| `SAKAI_DB_PASS` | `sakaipassword` | Secure password for the database. |
+| `SAKAI_DB_NAME` | `sakaidatabase` | Internal database name. |
+| `SAKAI_DB_HOST` | `db` (Docker) / `127.0.0.1` (Native) | Connection endpoint. |
+
+---
+
+## 🔍 Troubleshooting: The "404 Not Found" Fix
+
+If you encounter a 404 error on the `/portal` page, it is typically caused by a failed database connection during kernel initialization. **This project includes built-in fixes for the two most common causes:**
+
+1.  **Missing Schema**: We set `auto.ddl=true` to automatically build the 340+ required tables on first run.
+2.  **MySQL 8 Public Key Error**: We include `&allowPublicKeyRetrieval=true` in all connection strings to allow the Java driver to authenticate securely with MySQL 8.
+
+### Manual Verification
+If the portal doesn't load after 10 minutes:
+1.  Run `./manage_docker.sh logs` (Docker) or `tail -f /opt/tomcat/logs/catalina.out` (Native).
+2.  Search for `SEVERE` or `BeanCreationException`.
+3.  Ensure the `db` service is "Healthy" (Docker) or your local MySQL service is running.
+
+---
+
+## 📄 License
+Sakai is licensed under the **Educational Community License, Version 2.0**. This project provides deployment tooling for the open-source Sakai LMS.
