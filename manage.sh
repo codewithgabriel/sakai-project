@@ -15,6 +15,7 @@ SAKAI_CONTAINER="sakai-app"
 DB_CONTAINER="sakai-db"
 BACKUP_DIR="./backups"
 PROPERTIES_FILE="./config/sakai.properties"
+TOMCAT_LOG_DIR="/usr/local/tomcat/logs"
 
 # --- Colors ---
 RED='\033[0;31m'
@@ -97,6 +98,26 @@ cmd_restart() {
 cmd_logs() {
     info "Following Sakai logs (Ctrl+C to stop)..."
     $COMPOSE logs -f sakai
+}
+
+cmd_tomcat_logs() {
+    info "Finding latest Tomcat access log in ${SAKAI_CONTAINER}:${TOMCAT_LOG_DIR}..."
+
+    # Find the most recently modified localhost_access_log file
+    LATEST_LOG=$(docker exec "$SAKAI_CONTAINER" bash -c \
+        "ls -t ${TOMCAT_LOG_DIR}/localhost_access_log*.txt 2>/dev/null | head -1")
+
+    if [ -z "$LATEST_LOG" ]; then
+        warn "No localhost_access_log files found yet."
+        info "Falling back to all Tomcat logs..."
+        docker exec -it "$SAKAI_CONTAINER" ls -lh "$TOMCAT_LOG_DIR"
+        return
+    fi
+
+    success "Tailing: ${LATEST_LOG}"
+    info "Press Ctrl+C to stop."
+    echo ""
+    docker exec -it "$SAKAI_CONTAINER" tail -f "$LATEST_LOG"
 }
 
 cmd_status() {
@@ -202,7 +223,8 @@ show_help() {
     echo -e "  ${GREEN}start${NC}       Start existing containers"
     echo -e "  ${GREEN}stop${NC}        Stop running containers"
     echo -e "  ${GREEN}restart${NC}     Restart all services"
-    echo -e "  ${GREEN}logs${NC}        Follow Sakai application logs"
+    echo -e "  ${GREEN}logs${NC}        Follow Sakai application logs (docker compose)"
+    echo -e "  ${GREEN}tomcat-logs${NC}  Tail the latest Tomcat access log inside the container"
     echo -e "  ${GREEN}status${NC}      Show container health and uptime"
     echo -e "  ${GREEN}clean${NC}       Remove containers and volumes (${RED}data loss!${NC})"
     echo ""
@@ -230,6 +252,7 @@ case "${1:-}" in
     stop)    cmd_stop    ;;
     restart) cmd_restart ;;
     logs)    cmd_logs    ;;
+    tomcat-logs) cmd_tomcat_logs ;;
     status)  cmd_status  ;;
     shell)   cmd_shell   ;;
     db)      cmd_db      ;;
