@@ -10,7 +10,7 @@ services:
       MYSQL_USER: sakaiuser
       MYSQL_PASSWORD: sakaipassword
     healthcheck:
-      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -33,7 +33,13 @@ services:
       - SAKAI_DB_PASS=sakaipassword
       - SAKAI_DB_NAME=sakaidatabase
     volumes:
+      # Keep Sakai persistent data
       - sakai_data:/usr/local/tomcat/sakai
+      - sakai_data:/usr/local/tomcat/conf
+
+      # 🔥 Force your custom sakai.properties to override volume
+      - ./sakai.properties:/usr/local/tomcat/sakai/sakai.properties
+      - ./tomcat-server.xml:/usr/local/tomcat/conf/server.xml
     restart: always
 
 volumes:

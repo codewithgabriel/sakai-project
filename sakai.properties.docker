@@ -1,11 +1,40 @@
 # Basic Settings
-serverName=localhost
-ui.service = Sakai
-version.service = 23
-test=true
+serverName=
+serverNameHeader=X-Forwarded-Host
+portal.url=/portal
+serverUrl=
+ui.service=Sakai
+version.service=23
+test=false
+search.enable=true
+
+# For security check and performance check
+auto.ddl=false  # Disable after first run to prevent accidental schema changes
+portal.security.headers.enabled=true  # Enable security headers
+
+# Force Sakai to generate URLs using the incoming request's scheme/host
+portal.serverUrl=@scheme@://@host@
+
+# Alternative/full explicit (use if above doesn't work)
+# serverUrl=https://main.aflon.com.ng
+# portal.baseUrl=https://main.aflon.com.ng
+
+# Trust proxy headers (very important behind Nginx)
+request.headers.trusted=true
+proxy.host.header=Host
+proxy.proto.header=X-Forwarded-Proto
+proxy.for.header=X-Forwarded-For
+
+# Disable gateway redirect overrides if present
+gateway.redirect=false   # or comment out any gateway.force.url
+
+# Security / cookie consistency
+sakai.cookieName=SAKAISESSID
+session.cookie.secure=true   # since you're on HTTPS
+
+
 
 # Database Settings
-# Note: 'db' refers to the MySQL service name in docker-compose.yml
 auto.ddl=true
 username@javax.sql.BaseDataSource=sakaiuser
 password@javax.sql.BaseDataSource=sakaipassword
