@@ -37,9 +37,9 @@ services:
       - sakai_data:/usr/local/tomcat/sakai
       - sakai_data:/usr/local/tomcat/conf
 
-      # 🔥 Force your custom sakai.properties to override volume
-      - ./sakai.properties:/usr/local/tomcat/sakai/sakai.properties
-      - ./tomcat-server.xml:/usr/local/tomcat/conf/server.xml
+      # Override container config with local files
+      - ./config/sakai.properties:/usr/local/tomcat/sakai/sakai.properties
+      - ./config/tomcat-server.xml:/usr/local/tomcat/conf/server.xml
     restart: always
 
 volumes:

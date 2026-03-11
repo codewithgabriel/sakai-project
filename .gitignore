@@ -1,0 +1,25 @@
+# Environment files
+.env
+.env.*
+
+# SSL certificates (sensitive)
+ssl/
+
+# Docker volumes and data
+db_data/
+backups/*.sql
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+
+# Docs
+docs/

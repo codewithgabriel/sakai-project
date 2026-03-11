@@ -1,12 +1,23 @@
 .git
 .gitignore
 .dockerignore
-node_modules
-target
-*.log
-*.sh
-!entrypoint.sh
 README.md
 Dockerfile
 docker-compose.yml
-sakai.properties.docker
+manage.sh
+
+# Directories not needed in Docker build context
+docs/
+scripts/
+nginx/
+ssl/
+
+# Only allow specific config files needed by Dockerfile COPY
+# (config/sakai.properties.template and config/entrypoint.sh are needed)
+config/sakai.properties
+config/tomcat-server.xml
+
+# Build artifacts
+*.log
+node_modules
+target
