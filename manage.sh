@@ -77,6 +77,14 @@ cmd_build() {
     success "Build started. Run './manage.sh logs' to monitor startup."
 }
 
+cmd_rebuild() {
+    info "Rebuilding from scratch (no cache)..."
+    $COMPOSE build --no-cache
+    info "Restarting services with the fresh image..."
+    $COMPOSE up -d --force-recreate
+    success "Rebuild complete. Run './manage.sh logs' to monitor startup."
+}
+
 cmd_start() {
     info "Starting Sakai services..."
     $COMPOSE up -d
@@ -239,6 +247,7 @@ show_help() {
     echo ""
     echo -e "${BOLD}Docker Lifecycle${NC}"
     echo -e "  ${GREEN}build${NC}       Build the Docker image and start all services"
+    echo -e "  ${GREEN}rebuild${NC}     Force a full rebuild with no cache (use after config changes)"
     echo -e "  ${GREEN}start${NC}       Start existing containers"
     echo -e "  ${GREEN}stop${NC}        Stop running containers"
     echo -e "  ${GREEN}restart${NC}     Restart all services"
@@ -268,6 +277,7 @@ detect_compose
 
 case "${1:-}" in
     build)   cmd_build   ;;
+    rebuild) cmd_rebuild ;;
     start)   cmd_start   ;;
     stop)    cmd_stop    ;;
     restart) cmd_restart ;;
