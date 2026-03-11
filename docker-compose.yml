@@ -35,7 +35,6 @@ services:
     volumes:
       # Keep Sakai persistent data
       - sakai_data:/usr/local/tomcat/sakai
-      - sakai_data:/usr/local/tomcat/conf
 
       # Override container config with local files
       - ./config/sakai.properties:/usr/local/tomcat/sakai/sakai.properties

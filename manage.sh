@@ -78,10 +78,12 @@ cmd_build() {
 }
 
 cmd_rebuild() {
+    info "Stopping and removing old containers..."
+    $COMPOSE down
     info "Rebuilding from scratch (no cache)..."
     $COMPOSE build --no-cache
-    info "Restarting services with the fresh image..."
-    $COMPOSE up -d --force-recreate
+    info "Starting services with the fresh image..."
+    $COMPOSE up -d
     success "Rebuild complete. Run './manage.sh logs' to monitor startup."
 }
 
