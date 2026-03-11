@@ -1,0 +1,114 @@
+# /etc/nginx/sites-available/sakai
+
+# Upstream to Sakai container (adjust port if not 8080)
+upstream sakai_backend {
+    server 127.0.0.1:8080;
+}
+
+# HTTP → HTTPS redirect for all traffic
+server {
+    listen 80;
+    listen [::]:80;
+    server_name *.aflon.com.ng main.aflon.com.ng;
+    
+    # Let's Encrypt challenge location (for certificate renewal)
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+    
+    # Redirect all other HTTP requests to HTTPS
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# Central management portal (HTTPS)
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name main.aflon.com.ng;
+
+    # SSL Certificate paths (after Let's Encrypt)
+    ssl_certificate /etc/letsencrypt/live/aflon.com.ng/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aflon.com.ng/privkey.pem;
+    
+    # Strong SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    location / {
+        proxy_pass http://sakai_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Host $host;
+
+        # Important: tell Sakai this is the central instance
+        proxy_set_header X-Sakai-Tenant "central";
+        
+        # WebSocket support (if needed)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
+
+# University portals – wildcard style (HTTPS)
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name ~^(?<tenant>[a-z0-9\-]+)\.aflon\.com\.ng$;
+
+    # SSL Certificate paths (wildcard or multi-domain cert)
+    ssl_certificate /etc/letsencrypt/live/aflon.com.ng/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/aflon.com.ng/privkey.pem;
+    
+    # Same SSL configuration
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    
+    # Security headers
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # If subdomain is "main", redirect to main portal
+    if ($tenant = "main") {
+        return 301 https://main.aflon.com.ng$request_uri;
+    }
+
+    location / {
+        proxy_pass http://sakai_backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
+        proxy_set_header X-Forwarded-Host $host;
+
+        # Critical: pass tenant identifier so Sakai knows who is accessing
+        proxy_set_header X-Sakai-Tenant $tenant;   # e.g. "unilesa"
+        
+        # WebSocket support (if needed)
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        
+        # Timeouts
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+}
