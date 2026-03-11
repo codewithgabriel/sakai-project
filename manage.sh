@@ -120,6 +120,25 @@ cmd_tomcat_logs() {
     docker exec -it "$SAKAI_CONTAINER" tail -f "$LATEST_LOG"
 }
 
+cmd_catalina_logs() {
+    info "Finding latest Catalina log in ${SAKAI_CONTAINER}:${TOMCAT_LOG_DIR}..."
+
+    LATEST_LOG=$(docker exec "$SAKAI_CONTAINER" bash -c \
+        "ls -t ${TOMCAT_LOG_DIR}/catalina.*.log 2>/dev/null | head -1")
+
+    if [ -z "$LATEST_LOG" ]; then
+        warn "No catalina log files found."
+        info "Available logs:"
+        docker exec -it "$SAKAI_CONTAINER" ls -lh "$TOMCAT_LOG_DIR"
+        return
+    fi
+
+    success "Tailing: ${LATEST_LOG}"
+    info "Press Ctrl+C to stop."
+    echo ""
+    docker exec -it "$SAKAI_CONTAINER" tail -${2:-200}f "$LATEST_LOG"
+}
+
 cmd_status() {
     $COMPOSE ps
 }
@@ -225,6 +244,7 @@ show_help() {
     echo -e "  ${GREEN}restart${NC}     Restart all services"
     echo -e "  ${GREEN}logs${NC}        Follow Sakai application logs (docker compose)"
     echo -e "  ${GREEN}tomcat-logs${NC}  Tail the latest Tomcat access log inside the container"
+    echo -e "  ${GREEN}catalina-logs${NC} Tail the latest Catalina engine log (errors, startup)"
     echo -e "  ${GREEN}status${NC}      Show container health and uptime"
     echo -e "  ${GREEN}clean${NC}       Remove containers and volumes (${RED}data loss!${NC})"
     echo ""
@@ -253,6 +273,7 @@ case "${1:-}" in
     restart) cmd_restart ;;
     logs)    cmd_logs    ;;
     tomcat-logs) cmd_tomcat_logs ;;
+    catalina-logs) cmd_catalina_logs "$@" ;;
     status)  cmd_status  ;;
     shell)   cmd_shell   ;;
     db)      cmd_db      ;;
